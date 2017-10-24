@@ -3,10 +3,11 @@
 Release History
 ---------------
 
-0.15.0 (2017-10-24)
+0.15.1 (2017-10-24)
 +++++++++++++++++++
 
   * Add warc_protocol, warc_version, warc_headers to wex response
+  * Some (partial) support for Python 2.6
 
 
 0.14.1 (2017-08-17)
