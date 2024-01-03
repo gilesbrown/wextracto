@@ -34,7 +34,7 @@ import sys
 import os
 import logging
 import errno
-from pkg_resources import EntryPoint, iter_entry_points
+from importlib.metadata import entry_points, EntryPoint
 from six.moves.urllib_parse import urlparse
 from six import itervalues
 from wex.extractor import Chained
@@ -83,7 +83,7 @@ class ExtractorFromEntryPoints(object):
 
     def iter_wex_entry_points(self):
 
-        for ep in iter_entry_points(GROUP):
+        for ep in entry_points(group=GROUP):
             # we don't want to load the same entry point twice
             if str(ep) in self.wex_entry_points_from_cwd:
                 continue
@@ -103,9 +103,9 @@ def domain_suffix(entry_point, name):
 
 def append_if_load_succeeded(extractors, entry_point):
     try:
-        extractors.append(entry_point.load(False))
+        extractors.append(entry_point.load())
     except Exception:
         logger = logging.getLogger(__name__)
-        logger.exception("Failed to load [%s] entry point '%s'",
+        logger.exception("Failed to resolve [%s] entry point '%s'",
                          GROUP, entry_point.name)
 

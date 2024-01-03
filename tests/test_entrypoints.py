@@ -1,18 +1,32 @@
-from pkg_resources import resource_stream, resource_filename, working_set
+import pytest
+from pathlib import Path
+from importlib import import_module
+from contextlib import contextmanager
 from wex.response import Response
 from wex.entrypoints import extractor_from_entry_points
 
 
-def setup_module():
-    entry = resource_filename(__name__, 'fixtures/TestMe.egg')
-    working_set.add_entry(entry)
+here = Path(__file__).parent
 
-def test_extractor_from_entry_points():
-    import testme
+
+@contextmanager
+def local_resource_stream(resource):
+    ref = here.joinpath(resource)
+    with ref.open('rb') as fp:
+        yield fp
+
+
+@pytest.fixture
+def testme(monkeypatch):
+    monkeypatch.syspath_prepend(here.joinpath('fixtures/TestMe.egg'))
+    return import_module("testme")
+
+
+def test_extractor_from_entry_points(testme):
     extract = extractor_from_entry_points()
-    readable = resource_stream(__name__, 'fixtures/get_this_that')
-    for value in Response.values_from_readable(extract, readable):
-        pass
+    with local_resource_stream('fixtures/get_this_that') as readable:
+        for _ in Response.values_from_readable(extract, readable):
+            pass
     hostname = 'httpbin.org'
     assert list(extract.extractors.keys()) == [hostname]
     extractors = set(extract.extractors[hostname].extractors)
@@ -29,8 +43,20 @@ class FakeLogger(object):
     def exception(self, *args, **kwargs):
         self.exceptions.append((args, kwargs))
 
-    def getLogger(self, name):
-        assert name == self.name
+    # We need these addHandler/removeHandler pair now
+    # because it seems like a new logging.getLogger()
+    # call has been added into the entry point core code.
+
+    def addHandler(self, handler):
+        assert handler
+
+    def removeHandler(self, handler):
+        assert handler
+
+    # Now we also may be asked for a root logger
+
+    def getLogger(self, name="__root__"):
+        assert name in (self.name, "__root__")
         return self
 
 
@@ -38,16 +64,17 @@ def extract_with_monkeypatched_logging(monkeypatch, excluded=[]):
     logger = FakeLogger('wex.entrypoints')
     monkeypatch.setattr('logging.getLogger', logger.getLogger)
     extractor = extractor_from_entry_points()
-    readable = resource_stream(__name__, 'fixtures/robots_txt')
-    for value in Response.values_from_readable(extractor, readable):
-        pass
+    with local_resource_stream('fixtures/robots_txt') as readable:
+        for _ in Response.values_from_readable(extractor, readable):
+            pass
     return logger
 
-def test_extractor_from_entry_points_load_error(monkeypatch):
+
+def test_extractor_from_entry_points_resolve_error(testme, monkeypatch):
     excluded = []
     logger = extract_with_monkeypatched_logging(monkeypatch, excluded)
     assert len(logger.exceptions) == 1
-    assert logger.exceptions[0][0][0].startswith("Failed to load")
+    assert logger.exceptions[0][0][0].startswith("Failed to resolve")
 
 
 #def test_extractor_from_entry_points_excluded(monkeypatch):
@@ -56,12 +83,11 @@ def test_extractor_from_entry_points_load_error(monkeypatch):
 #    assert len(logger.exceptions) == 0
 
 
-def test_extractor_from_entry_points_hostname_suffix_excluded():
-    import testme
+def test_extractor_from_entry_points_hostname_suffix_excluded(testme):
     extractor = extractor_from_entry_points()
-    readable = resource_stream(__name__, 'fixtures/robots_txt')
-    for value in Response.values_from_readable(extractor, readable):
-        pass
+    with local_resource_stream('fixtures/robots_txt') as readable:
+        for value in Response.values_from_readable(extractor, readable):
+            pass
     hostname = 'www.foo.com'
     assert list(extractor.extractors.keys()) == [hostname]
     extractors = set(extractor.extractors[hostname].extractors)

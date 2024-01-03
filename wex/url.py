@@ -13,8 +13,8 @@ from six.moves.urllib_parse import (urlparse,
                                     parse_qsl,
                                     urlencode,
                                     unquote)
-from pkg_resources import iter_entry_points
-from publicsuffix import PublicSuffixList
+from importlib.metadata import entry_points
+from publicsuffix2 import PublicSuffixList
 
 from .py2compat import urlquote
 from .composed import composable
@@ -61,9 +61,9 @@ class Method(object):
 
     def get(self, url, **kw):
         """ Get responses for 'url'. """
-        entry_points = iter_entry_points(self.group, self.name)
+        eps = iter(entry_points(group=self.group, name=self.name))
         try:
-            ep = next(entry_points)
+            ep = next(eps)
         except StopIteration:
             raise ValueError("Missing method '%s' in '%s'" %
                              (self.name, self.group))
