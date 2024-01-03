@@ -18,7 +18,7 @@ setup(
     packages=['wex'],
     package_data={
         '': ['LICENSE.txt', 'NOTICES.txt'],
-        'wex': ['logging.conf', 'phantomjs.js', 'js/*.js'],
+        'wex': ['logging.conf'],
     },
     zip_safe=False,
     install_requires=[
@@ -26,7 +26,7 @@ setup(
         'requests',
         'lxml>=3',
         'cssselect',
-        'publicsuffix>=1.1',
+        'publicsuffix2~=2.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -48,13 +48,11 @@ setup(
         [wex.method.http]
         get = wex.http:request
         post = wex.http:request
-        phantomjs = wex.phantomjs:request_using_phantomjs
         form = wex.form:submit_form
 
         [wex.method.https]
         get = wex.http:request
         post = wex.http:request
-        phantomjs = wex.phantomjs:request_using_phantomjs
         form = wex.form:submit_form
 
         [wex.method.ftp]
