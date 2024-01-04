@@ -1,10 +1,21 @@
-from pkg_resources import resource_stream
+from contextlib import contextmanager
+from pathlib import Path
 from wex.response import Response
 from wex.sitemaps import urls_from_sitemaps
 
 
+@contextmanager
+def relative_resource_stream(resource):
+    ref = Path(__file__).parent / resource
+    with ref.open('rb') as readable:
+        yield readable
+
+
+
 def response(resource):
-    return Response.from_readable(resource_stream(__name__, resource))
+    with relative_resource_stream(resource) as readable:
+        response = Response.from_readable(readable)
+    return response
 
 
 def test_urls_from_robots_txt():

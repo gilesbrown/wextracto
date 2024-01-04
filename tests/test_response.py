@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 import codecs
 import pytest
-from pkg_resources import resource_stream
+from pathlib import Path
+from contextlib import contextmanager
 from six.moves.http_client import BadStatusLine
 from six import BytesIO
 from wex.response import Response, DEFAULT_READ_SIZE
@@ -19,6 +20,12 @@ without_content_length = '''HTTP/1.1 200 OK\r
 {content}'''
 
 content = 'HELLO'
+
+@contextmanager
+def relative_resource_stream(resource):
+    ref = Path(__file__).parent / resource
+    with ref.open('rb') as readable:
+        yield readable
 
 
 def build_response(content, response=with_content_length, **kw):
@@ -106,16 +113,16 @@ def test_extract_from_readable():
 
 
 def test_undecodable_url():
-    readable = resource_stream(__name__, 'fixtures/undecodable_url.wexin_')
-    response = Response.from_readable(readable)
-    assert response.url == 'https://www.example.net/Ã'
-    assert response.request_url == 'https://www.example.net/Ã#{"method":"get"}'
+    with relative_resource_stream('fixtures/undecodable_url.wexin_') as readable:
+        response = Response.from_readable(readable)
+        assert response.url == 'https://www.example.net/Ã'
+        assert response.request_url == 'https://www.example.net/Ã#{"method":"get"}'
 
 
 def test_warc_response():
-    readable = resource_stream(__name__, 'fixtures/warc_response')
-    response = Response.from_readable(readable)
-    assert response.url == 'http://httpbin.org/get?this=that'
-    assert response.warc_protocol == b'WARC'
-    assert response.warc_version == (1, 0)
-    assert response.warc_headers.get('warc-type') == 'response'
+    with relative_resource_stream('fixtures/warc_response') as readable:
+        response = Response.from_readable(readable)
+        assert response.url == 'http://httpbin.org/get?this=that'
+        assert response.warc_protocol == b'WARC'
+        assert response.warc_version == (1, 0)
+        assert response.warc_headers.get('warc-type') == 'response'
