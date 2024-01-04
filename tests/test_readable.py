@@ -1,7 +1,7 @@
 import pickle
 import pytest
 from io import FileIO
-from pkg_resources import resource_filename
+from pathlib import Path
 from six import BytesIO, next
 from wex.response import DEFAULT_READ_SIZE
 from wex.readable import (ChainedReadable,
@@ -11,6 +11,13 @@ from wex.readable import (ChainedReadable,
                           tarfile_open,
                           readables_from_paths,
                           readables_from_file_path)
+
+
+here = Path(__file__).parent
+
+
+def resource_filename(resource):
+    return str(here.joinpath(resource))
 
 
 def read_chunks(readable, size=DEFAULT_READ_SIZE):
@@ -108,7 +115,7 @@ def test_tee_readable_readline(tmpdir):
 
 
 def test_readables_from_file_path_where_path_is_tarfile():
-    path = resource_filename(__name__, 'fixtures/example.tar')
+    path = resource_filename('fixtures/example.tar')
     readables = readables_from_file_path(path)
     r0 = next(readables)
     r0p = pickle.loads(pickle.dumps(r0))
@@ -135,15 +142,15 @@ def test_open_attribute_error():
 
 
 def test_tarfile_open_repeated_same_path():
-    path = resource_filename(__name__, 'fixtures/example.tar')
+    path = resource_filename('fixtures/example.tar')
     tf1 = tarfile_open(path)
     tf2 = tarfile_open(path)
     assert tf1 is tf2
 
 
 def test_tarfile_open_repeated_different_path():
-    path1 = resource_filename(__name__, 'fixtures/example.tar')
-    path2 = resource_filename(__name__, 'fixtures/example2.tar')
+    path1 = resource_filename('fixtures/example.tar')
+    path2 = resource_filename('fixtures/example2.tar')
     tf1 = tarfile_open(path1)
     tf2 = tarfile_open(path2)
     assert tf1 is not tf2

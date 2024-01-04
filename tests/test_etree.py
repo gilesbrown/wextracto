@@ -1,15 +1,18 @@
 # coding=utf-8
 from __future__ import unicode_literals, print_function
 import os
+from pathlib import Path
 from operator import itemgetter
 import pytest
-from pkg_resources import resource_stream
+import importlib.resources
+from contextlib import contextmanager
 from six import BytesIO
 from lxml import html
 from wex.cache import Cache
 from wex.response import Response, parse_headers
 from wex import etree as e
 from wex.iterable import first, flatten
+
 
 skipif_travis_ci = pytest.mark.skipif(len(os.environ.get('TRAVIS_CI', '')),
                                       reason="mysterious parse failure")
@@ -69,6 +72,14 @@ X-wex-request-url: http://foo.com/bar\xe2\x84\xa2/
 item0 = itemgetter(0)
 
 
+@contextmanager
+def relative_resource_stream(resource):
+    """ Context manager for a readable of binary file """
+    ref = Path(__file__).parent / resource
+    with ref.open('rb') as fp:
+        yield fp
+
+
 def create_response(data):
     return Response.from_readable(BytesIO(data))
 
@@ -82,8 +93,8 @@ def test_parse():
 def test_parse_next_decoder():
     # borrow a fixture from htmlstream
     resource = 'fixtures/htmlstream/shift-jis-next-decoder'
-    readable = resource_stream(__name__, resource)
-    response = Response.from_readable(readable)
+    with relative_resource_stream(resource) as readable:
+        response = Response.from_readable(readable)
     # here the parse function will try utf-8 and then shift-jis
     etree = e.parse(response)
     assert list(etree.getroot().itertext()) == ['\n', '巨', '\n']
@@ -91,8 +102,8 @@ def test_parse_next_decoder():
 
 def test_bug_cp1252():
     resource = 'fixtures/bug_cp1252'
-    readable = resource_stream(__name__, resource)
-    response = Response.from_readable(readable)
+    with relative_resource_stream(resource) as readable:
+        response = Response.from_readable(readable)
     etree = e.parse(response)
     assert etree.xpath('//title/text()') == ['Problem²']
 
@@ -132,7 +143,7 @@ def test_xpath_re():
 
 
 def test_xpath_re_match():
-    f = (e.xpath('re:match(//body, "\s+is\s+(some)\s+text", "gi")/text()') |
+    f = (e.xpath(r're:match(//body, "\s+is\s+(some)\s+text", "gi")/text()') |
          list)
     assert f(create_response(example)) == ['some']
 

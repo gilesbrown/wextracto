@@ -1,0 +1,17 @@
+Metadata-Version: 1.1
+Name: TestMe
+Version: 0.1.0
+Summary: Python Web Resource Data Extraction Library.
+Home-page: UNKNOWN
+Author: Giles Brown
+Author-email: gsbrown@ebay.com
+License: Apache 2.0
+Description: Example
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3

@@ -16,12 +16,6 @@ def local_resource_stream(resource):
         yield fp
 
 
-@pytest.fixture
-def testme(monkeypatch):
-    monkeypatch.syspath_prepend(here.joinpath('fixtures/TestMe.egg'))
-    return import_module("testme")
-
-
 def test_extractor_from_entry_points(testme):
     extract = extractor_from_entry_points()
     with local_resource_stream('fixtures/get_this_that') as readable:

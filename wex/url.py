@@ -61,12 +61,11 @@ class Method(object):
 
     def get(self, url, **kw):
         """ Get responses for 'url'. """
-        eps = iter(entry_points(group=self.group, name=self.name))
-        try:
-            ep = next(eps)
-        except StopIteration:
+        eps = [ep for ep in entry_points(group=self.group, name=self.name)]
+        if not eps:
             raise ValueError("Missing method '%s' in '%s'" %
                              (self.name, self.group))
+        ep = eps[0]
         method = ep.load()
         return method(url, self, **kw)
 

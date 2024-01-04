@@ -26,23 +26,25 @@ from __future__ import absolute_import, unicode_literals, print_function  # prag
 # function level imports and pragmas.
 #
 
+from pathlib import Path
 import pytest                                            # pragma: no cover
 
 TAB = '\t'  # pragma: no cover
 LF = '\n'  # pragma: no cover
 MISSING = object()  # pragma: no cover
 
-def pytest_collect_file(parent, path):                   # pragma: no cover
+def pytest_collect_file(parent, file_path):                   # pragma: no cover
     from .readable import EXT_WEXIN
-    if path.check(ext=EXT_WEXIN.lstrip('.')):
-        return WexinFile(path, parent)
+    file_path = Path(file_path)
+    if file_path.suffix == EXT_WEXIN:
+        return WexinFile.from_parent(parent, path=file_path)
 
 
 class WexinFile(pytest.File):                        # pragma: no cover
     """ A .wexin file is a stored response. """
 
-    def __init__(self, path, parent):
-        super(WexinFile, self).__init__(path, parent)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.extracted_values = None
         self.value_items = {}
 
@@ -59,11 +61,11 @@ class WexinFile(pytest.File):                        # pragma: no cover
                 if labels in self.value_items:
                     item = self.value_items[labels]
                 else:
-                    item = WexoutValues(labels, self)
+                    item = WexoutValues.from_parent(self, name=labels)
                     self.value_items[labels] = item
                     yield item
                 item.values.add(value.strip())
-        yield WexoutLabels('labels', self)
+        yield WexoutLabels.from_parent(self, name='labels')
 
     def get_extracted_values(self, name):
         if self.extracted_values is None:
@@ -91,8 +93,8 @@ class WexinFile(pytest.File):                        # pragma: no cover
 class WexoutValues(pytest.Item):                        # pragma: no cover
     """ Test that the value set is the same. """
 
-    def __init__(self, name, parent):            # pragma: no cover
-        super(WexoutValues, self).__init__(name, parent)
+    def __init__(self, **kwargs):            # pragma: no cover
+        super().__init__(**kwargs)
         self.values = set()
 
     def runtest(self):

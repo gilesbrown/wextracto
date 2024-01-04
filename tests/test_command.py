@@ -5,10 +5,11 @@ import errno
 import sys
 import time
 import subprocess
+from contextlib import contextmanager
 from itertools import tee
 from six import BytesIO
 from six.moves import zip
-from pkg_resources import working_set, resource_filename
+from pathlib import Path
 import pytest
 from wex.readable import EXT_WEXIN
 from wex.output import EXT_WEXOUT, TeeStdOut
@@ -19,18 +20,26 @@ from wex import command
 url = URL('http://httpbin.org/get?this=that')
 
 
+here = Path(__file__).parent
+
+
+
+def local_resource_filename(resource):
+    return str(here.joinpath(resource))
+
+
+@contextmanager
+def local_resource_stream(resource):
+    ref = here.joinpath(resource)
+    with ref.open('rb') as fp:
+        yield fp
+
+
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
-
-
-
-def setup_module():
-    entry = resource_filename(__name__, 'fixtures/TestMe.egg')
-
-    working_set.add_entry(entry)
 
 
 def find_file_paths(top):
@@ -42,7 +51,7 @@ def find_file_paths(top):
 
 def start_wex_subprocess(args=['--help']):
     env = dict(os.environ)
-    egg = resource_filename(__name__, 'fixtures/TestMe.egg')
+    egg = str(here.joinpath('fixtures/TestMe.egg'))
     env['PYTHONPATH'] = egg
     # This test will fail unless you run setup.py develop or setup.py install
     exe = os.path.join(os.path.dirname(sys.executable), 'wex')
@@ -50,7 +59,7 @@ def start_wex_subprocess(args=['--help']):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
 
 
-def test_wex_console_script():
+def test_wex_console_script(testme):
     # this url is cunningly crafted to generate UTF-8 output
     url = 'http://httpbin.org/get?this=that%C2%AE'
     wex = start_wex_subprocess([url])
@@ -79,16 +88,16 @@ def run_main(monkeypatch, args):
     return stdout.getvalue()
 
 
-def test_main_url(monkeypatch):
+def test_main_url(testme, monkeypatch):
     assert run_main(monkeypatch, [url]) == '"this"\t"that"\n'
 
 
-def test_main_tarfile(monkeypatch):
-    example_tar = resource_filename(__name__, 'fixtures/example.tar')
+def test_main_tarfile(testme, monkeypatch):
+    example_tar = local_resource_filename('fixtures/example.tar')
     assert run_main(monkeypatch, [example_tar]) == '"this"\t"that"\n'
 
 
-def test_main_save(monkeypatch, tmpdir):
+def test_main_save(testme, monkeypatch, tmpdir):
     destdir = tmpdir.strpath
     args = ['--save-dir', destdir, url]
     assert run_main(monkeypatch, args) == '"this"\t"that"\n'
@@ -119,8 +128,8 @@ def test_main_no_such_file(monkeypatch):
     assert excinfo.value.args[0].errno == errno.ENOENT
 
 
-def test_main_output_return_list(monkeypatch, tmpdir):
-    empty = resource_filename(__name__, 'fixtures/empty.wexin_')
+def test_main_output_return_list(testme, monkeypatch, tmpdir):
+    empty = local_resource_filename('fixtures/empty.wexin_')
     args = [empty]
     monkeypatch.chdir(tmpdir)
     with tmpdir.join('entry_points.txt').open('w') as fp:
@@ -128,8 +137,8 @@ def test_main_output_return_list(monkeypatch, tmpdir):
     assert run_main(monkeypatch, args) == '[1,2]\n'
 
 
-def test_main_output_return_tuple(monkeypatch, tmpdir):
-    empty = resource_filename(__name__, 'fixtures/empty.wexin_')
+def test_main_output_return_tuple(testme, monkeypatch, tmpdir):
+    empty = local_resource_filename('fixtures/empty.wexin_')
     args = [empty]
     monkeypatch.chdir(tmpdir)
     with tmpdir.join('entry_points.txt').open('w') as fp:
@@ -138,12 +147,16 @@ def test_main_output_return_tuple(monkeypatch, tmpdir):
     assert run_main(monkeypatch, args) == '[1,2]\n'
 
 
-def test_main_output_return_dict(monkeypatch, tmpdir):
-    empty = resource_filename(__name__, 'fixtures/empty.wexin_')
+def test_main_output_return_dict(testme, monkeypatch, tmpdir):
+    empty = local_resource_filename('fixtures/empty.wexin_')
     args = [empty]
     monkeypatch.chdir(tmpdir)
     with tmpdir.join('entry_points.txt').open('w') as fp:
         fp.write("[wex]\nreturn_dict = testme:return_dict")
+
+    from wex.entrypoints import ExtractorFromEntryPoints
+
+
     # The tuple is encoded as a JSON array
     assert run_main(monkeypatch, args) == '{"a":1}\n'
 

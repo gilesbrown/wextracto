@@ -34,7 +34,7 @@ import sys
 import os
 import logging
 import errno
-from importlib.metadata import entry_points, EntryPoint
+from importlib.metadata import entry_points, EntryPoint, EntryPoints
 from six.moves.urllib_parse import urlparse
 from six import itervalues
 from wex.extractor import Chained
@@ -46,17 +46,19 @@ GROUP='wex'
 def get_wex_entry_points_from_cwd():
     try:
         with open(os.path.join(os.getcwd(), 'entry_points.txt')) as txt:
-            entry_point_map = EntryPoint.parse_map(txt.read())
-        entry_points = dict((str(ep), ep)
-                            for ep in entry_point_map.get(GROUP, {}).values())
+            # Not very comfortable about using an internal method here
+            # but do not want to get stuck on this right now.
+            cwd_entry_points = EntryPoints._from_text(txt.read())
+        # IIUC the key in this dictionary is ignored
+        cwd_entry_points_dict = {ep.name: ep for ep in cwd_entry_points}
         if os.getcwd() not in sys.path:
             sys.path.insert(0, os.getcwd())
     except IOError as exc:
         if exc.errno != errno.ENOENT:
             raise
-        entry_points = {}
+        cwd_entry_points_dict = {}
 
-    return entry_points
+    return cwd_entry_points_dict
 
 
 class ExtractorFromEntryPoints(object):

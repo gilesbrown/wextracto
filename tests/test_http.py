@@ -38,6 +38,11 @@ def get_monkeypatched(monkeypatch, url, **kw):
         request_args.append((args, request_kwargs))
         response = requests.models.Response()
         response.raw = Raw()
+        response.request = requests.models.PreparedRequest()
+        response.request.prepare(
+            method='GET',
+            url=url,
+        )
         return response
 
     monkeypatch.setattr('requests.sessions.Session.request', request)
