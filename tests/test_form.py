@@ -4,7 +4,7 @@ from six.moves import map
 from wex.form import create_html_parser
 from wex.url import URL
 from wex.response import Response, parse_headers
-from httpproxy import HttpProxy, skipif_travis_ci
+from .httpproxy import HttpProxy, skipif_travis_ci
 
 
 def run(**kw):

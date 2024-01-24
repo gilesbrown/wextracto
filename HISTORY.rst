@@ -3,6 +3,14 @@
 Release History
 ---------------
 
+0.16.0 (2024-01-24)
++++++++++++++++++++
+
+  * Drop support for Python 2
+  * Remove PhantomJS extensions
+  * Switch from pkg_resources to importlib
+
+
 0.15.1 (2017-10-24)
 +++++++++++++++++++
 

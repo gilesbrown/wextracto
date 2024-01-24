@@ -5,7 +5,7 @@ from six import BytesIO
 from wex.url import URL
 from wex.response import Response
 from wex.http import decode
-from httpproxy import HttpProxy, skipif_travis_ci
+from .httpproxy import HttpProxy, skipif_travis_ci
 
 utf8_reader = codecs.getreader('UTF-8')
 
