@@ -5,7 +5,7 @@ from six import BytesIO
 from wex.url import URL
 from wex.response import Response
 from wex.http import decode
-from httpproxy import HttpProxy, skipif_travis_ci
+from .httpproxy import HttpProxy, skipif_travis_ci
 
 utf8_reader = codecs.getreader('UTF-8')
 
@@ -38,6 +38,11 @@ def get_monkeypatched(monkeypatch, url, **kw):
         request_args.append((args, request_kwargs))
         response = requests.models.Response()
         response.raw = Raw()
+        response.request = requests.models.PreparedRequest()
+        response.request.prepare(
+            method='GET',
+            url=url,
+        )
         return response
 
     monkeypatch.setattr('requests.sessions.Session.request', request)

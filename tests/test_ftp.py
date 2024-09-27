@@ -1,3 +1,5 @@
+import sys
+import pytest
 from wex.url import URL
 
 url = 'ftp://anonymous:me@speedtest.tele2.net/1KB.zip'
@@ -10,6 +12,7 @@ expected_lines = [
 expected_content = b''.join(expected_lines)
 
 
+@pytest.mark.skipif(not sys.stdout.isatty(), reason="not reliable enough for fully automatic use")
 def test_ftp_read():
     readables = list(URL(url).get())
     assert len(readables) == 1

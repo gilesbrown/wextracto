@@ -64,9 +64,6 @@ Other Methods
 .. automodule:: wex.form
     :members:
 
-.. automodule:: wex.phantomjs
-    :members:
-
 
 .. automodule:: wex.ftp
     :members:

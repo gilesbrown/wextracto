@@ -22,7 +22,8 @@ import errno
 import argparse
 import logging.config
 from multiprocessing import cpu_count
-from pkg_resources import resource_filename, EntryPoint
+import importlib.resources
+from importlib.metadata import EntryPoint
 from .readable import readables_from_paths
 from .response import Response
 from .processpool import do
@@ -31,7 +32,7 @@ from .value import Value
 from .entrypoints import extractor_from_entry_points
 
 
-default_logging_conf = resource_filename(__name__, 'logging.conf')
+default_logging_conf = importlib.resources.files(__package__) / 'logging.conf'
 
 
 argparser = argparse.ArgumentParser()
@@ -44,9 +45,9 @@ argparser.add_argument(
 )
 
 
-def label_func(spec):
-    ep = EntryPoint.parse('ep = {}'.format(spec))
-    func = ep.load(require=False)
+def label_func(value):
+    ep = EntryPoint("label", value, "label_func")
+    func = ep.load()
     if not callable(func):
         raise ValueError("'%s' is not callable" % spec)
     return func
@@ -171,8 +172,9 @@ class WriteExtractedValues(object):
 
 def main():
 
-    logging.config.fileConfig(default_logging_conf,
-                              disable_existing_loggers=False)
+    with importlib.resources.as_file(default_logging_conf) as logging_conf_path:
+        logging.config.fileConfig(logging_conf_path,
+                                  disable_existing_loggers=False)
 
     args = argparser.parse_args()
 

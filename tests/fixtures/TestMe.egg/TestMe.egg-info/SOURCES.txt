@@ -1,0 +1,8 @@
+TestMe.egg-info/PKG-INFO
+TestMe.egg-info/SOURCES.txt
+TestMe.egg-info/dependency_links.txt
+TestMe.egg-info/entry_points.txt
+TestMe.egg-info/not-zip-safe
+TestMe.egg-info/requires.txt
+TestMe.egg-info/top_level.txt
+testme.py

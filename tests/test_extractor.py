@@ -1,4 +1,5 @@
-from pkg_resources import working_set, resource_stream, resource_filename
+from pathlib import Path
+from contextlib import contextmanager
 from wex.extractor import label, labelled, chained, named
 from wex.response import Response
 
@@ -22,17 +23,18 @@ X-wex-url: http://doesnotmatch.org/headers\r
 {}"""
 
 
+@contextmanager
+def relative_resource_stream(resource):
+    """ Context manager for a readable of binary file """
+    ref = Path(__file__).parent / resource
+    with ref.open('rb') as fp:
+        yield fp
+
 class MyError(Exception):
     pass
 
 
 my_error = MyError()
-
-
-def setup_module():
-    # This egg has [wex] entry points we use for testing
-    entry = resource_filename(__name__, 'fixtures/TestMe.egg')
-    working_set.add_entry(entry)
 
 
 def extract_arg0(arg0):
@@ -54,8 +56,8 @@ def test_chained_extractor_raises():
 
 
 def test_chained_does_seek_response():
-    readable = resource_stream(__name__, 'fixtures/robots_txt')
-    response = Response.from_readable(readable)
+    with relative_resource_stream('fixtures/robots_txt') as readable:
+        response = Response.from_readable(readable)
     # use the same extractor twice
     extract = chained(extract_first_line, extract_first_line)
     values = list(extract(response))
@@ -70,15 +72,15 @@ def test_label():
 
 
 def test_label_missing_label():
-    labeller = (lambda x: None)
+    labeller = (lambda _: None)
     @label(labeller)
-    def extract(src):
+    def extract(_):
         yield ("baz",)
     assert list(extract("foo")) == []
 
 
 def test_labelled_error():
-    labeller = (lambda x: "bar")
+    labeller = (lambda _: "bar")
     extract = labelled(labeller, extract_with_error)
     values = list(extract('foo'))
     assert values == [('bar', my_error,)]
@@ -94,7 +96,7 @@ def test_labelled_chained():
 def test_label_named():
     # bug test
     labeller  = (lambda x: x)
-    n = named(a1=(lambda x: 'bar'))
+    n = named(a1=(lambda _: 'bar'))
     extract = label(labeller)(n)
     assert list(extract("foo")) == [("foo", "a1", "bar")]
 
